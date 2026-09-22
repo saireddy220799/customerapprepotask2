@@ -1,23 +1,57 @@
 services:
-  customer-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
 
-    container_name: ${APPLICATION}
+  db:
+    image: postgres:16
+    container_name: ${DB_CONTAINER}
+    restart: unless-stopped
 
-    env_file:
-      - ${ENV_FILE}
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
-    ports:
-      - "${PORT}:8080"
+    volumes:
+      - ${DB_VOLUME}:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
     networks:
       - customer-network
 
+  app:
+    image: ${APP_IMAGE}
+    container_name: ${APP_CONTAINER}
     restart: unless-stopped
 
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_VERSION: ${APP_VERSION}
+
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "${HOST_PORT}:8080"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    networks:
+      - customer-network
+
+volumes:
+  customer-db-dev-data:
 
 networks:
   customer-network:
-    name: ${NETWORK}
+    external: true
+    name: ${DOCKER_NETWORK}
+

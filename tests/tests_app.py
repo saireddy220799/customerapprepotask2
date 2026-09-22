@@ -1,14 +1,29 @@
-def test_customer_search():
-    customers = [
-        {"name": "Sai", "email": "sai@gmail.com"},
-        {"name": "Swaroop", "email": "swaroop@gmail.com"}
-    ]
+import os
 
-    result = [
-        customer
-        for customer in customers
-        if "sai" in customer["name"].lower()
-    ]
+from app.app import app
 
-    assert len(result) == 1
-    assert result[0]["name"] == "Sai"
+
+def test_environment():
+    client = app.test_client()
+
+    response = client.get("/environment")
+
+    assert response.status_code == 200
+
+
+def test_version():
+    client = app.test_client()
+
+    response = client.get("/version")
+
+    assert response.status_code == 200
+
+
+def test_health_endpoint():
+    client = app.test_client()
+
+    response = client.get("/health")
+
+    # Database may not be running during unit testing,
+    # so verify the endpoint exists.
+    assert response.status_code in [200, 503]
