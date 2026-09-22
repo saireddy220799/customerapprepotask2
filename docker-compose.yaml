@@ -1,0 +1,23 @@
+services:
+  customer-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: ${APPLICATION}
+
+    env_file:
+      - ${ENV_FILE}
+
+    ports:
+      - "${PORT}:8080"
+
+    networks:
+      - customer-network
+
+    restart: unless-stopped
+
+
+networks:
+  customer-network:
+    name: ${NETWORK}
