@@ -87,6 +87,55 @@ def customers():
             "error": str(e)
         }), 500
 
+@app.route("/customers/search")
+def search_customers():
+    from flask import request
+
+    search = request.args.get("q", "")
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS customers (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(150) UNIQUE NOT NULL
+            )
+        """)
+
+        conn.commit()
+
+        cursor.execute("""
+            SELECT id, name, email
+            FROM customers
+            WHERE LOWER(name) LIKE LOWER(%s)
+               OR LOWER(email) LIKE LOWER(%s)
+            ORDER BY id
+        """, (
+            f"%{search}%",
+            f"%{search}%"
+        ))
+
+        rows = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return jsonify([
+            {
+                "id": row[0],
+                "name": row[1],
+                "email": row[2]
+            }
+            for row in rows
+        ])
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 @app.route("/info")
 def info():
